@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<title>Unlimited Result System</title>
+<style>
+body{font-family:Urdu Typesetting,Arial;background:#eef}
+h2{text-align:center;color:teal}
+.container{max-width:900px;margin:auto;background:#fff;padding:20px;border:3px solid teal}
+input,button{padding:6px;margin:4px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #333;padding:6px;text-align:center}
+.pass{color:green;font-weight:bold}
+.fail{color:red;font-weight:bold}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<h2>آن لائن رزلٹ سسٹم</h2>
+<div class="container">
+
+<!-- STUDENT -->
+<div id="studentBox">
+<input id="rollInput" placeholder="رول نمبر لکھیں">
+<button onclick="search()">Search</button>
+<div id="output"></div>
+<hr>
+<button onclick="showAdmin()">Admin Login</button>
+</div>
+
+<!-- LOGIN -->
+<div id="loginBox" class="hidden">
+<h3>Admin Login</h3>
+<input id="auser" placeholder="Username">
+<input id="apass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<button onclick="back()">Back</button>
+</div>
+
+<!-- ADMIN -->
+<div id="adminPanel" class="hidden">
+<h3>Admin Panel</h3>
+
+<input id="rroll" placeholder="Roll">
+<input id="rname" placeholder="Name">
+<input id="rfather" placeholder="Father">
+<input id="rinst" placeholder="Institute">
+
+<h4>Subjects</h4>
+<div id="subs"></div>
+<button onclick="addSubject()">+ Add Subject</button>
+
+<br><br>
+<button onclick="addResult()">Save Result</button>
+<button onclick="clearAll()">Clear All</button>
+<button onclick="logout()">Logout</button>
+
+<h4>All Results</h4>
+<table id="list"></table>
+</div>
+
+</div>
+
+<script>
+let ADMIN_USER="admin", ADMIN_PASS="1234";
+let data=JSON.parse(localStorage.getItem("results")||"[]");
+
+function save(){localStorage.setItem("results",JSON.stringify(data));}
+
+function addSubject(){
+let d=document.createElement("div");
+d.innerHTML=`<input placeholder="Subject Name">
+<input type="number" placeholder="Marks">`;
+subs.appendChild(d);
+}
+
+function search(){
+let r=rollInput.value;
+let f=data.find(x=>x.roll==r);
+if(!f){output.innerHTML="❌ رزلٹ نہیں ملا";return;}
+let total=f.subjects.reduce((a,b)=>a+b.marks,0);
+let max=f.subjects.length*100;
+let per=(total/max*100).toFixed(2);
+let status=per>=40?"Pass":"Fail";
+
+let h=`<b>نام:</b> ${f.name}<br>
+<b>والد:</b> ${f.father}<br>
+<b>ادارہ:</b> ${f.inst}<br>
+<table><tr><th>مضمون</th><th>مارکس</th></tr>`;
+f.subjects.forEach(s=>h+=`<tr><td>${s.name}</td><td>${s.marks}</td></tr>`);
+h+=`</table>
+<b>Total:</b> ${total}/${max}<br>
+<b>Percentage:</b> ${per}%<br>
+<b class="${status=='Pass'?'pass':'fail'}">${status}</b>`;
+output.innerHTML=h;
+}
+
+function showAdmin(){studentBox.classList.add("hidden");loginBox.classList.remove("hidden");}
+function back(){loginBox.classList.add("hidden");studentBox.classList.remove("hidden");}
+
+function login(){
+if(auser.value==ADMIN_USER && apass.value==ADMIN_PASS){
+loginBox.classList.add("hidden");
+adminPanel.classList.remove("hidden");
+render();
+}else alert("غلط لاگ ان");
+}
+
+function logout(){adminPanel.classList.add("hidden");studentBox.classList.remove("hidden");}
+
+function addResult(){
+let subsArr=[];
+[...subs.children].forEach(d=>{
+let n=d.children[0].value;
+let m=+d.children[1].value;
+if(n&&m)subsArr.push({name:n,marks:m});
+});
+let obj={roll:rroll.value,name:rname.value,father:rfather.value,inst:rinst.value,subjects:subsArr};
+let i=data.findIndex(x=>x.roll==obj.roll);
+if(i>=0)data[i]=obj; else data.push(obj);
+save();render();alert("Saved!");
+subs.innerHTML="";
+}
+
+function render(){
+let t="<tr><th>Roll</th><th>Name</th><th>Delete</th></tr>";
+data.forEach((x,i)=>{
+t+=`<tr><td>${x.roll}</td><td>${x.name}</td>
+<td><button onclick="del(${i})">X</button></td></tr>`;
+});
+list.innerHTML=t;
+}
+
+function del(i){data.splice(i,1);save();render();}
+function clearAll(){if(confirm("Delete all?")){data=[];save();render();}}
+</script>
+
+</body>
+</html>
